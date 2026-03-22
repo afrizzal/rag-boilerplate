@@ -4,7 +4,7 @@ Services untuk RAG pipeline:
 2. Generation — generate jawaban pakai Claude API
 """
 import numpy as np
-import anthropic
+import google.generativeai as genai
 from django.conf import settings
 
 from documents.models import DocumentChunk
@@ -75,20 +75,15 @@ Jawaban:"""
 
 
 def generate_answer(question_text: str, context_chunks: list[dict]) -> str:
-    """Generate jawaban menggunakan Claude API."""
-    if not settings.ANTHROPIC_API_KEY:
-        raise ValueError("ANTHROPIC_API_KEY belum dikonfigurasi di file .env")
+    """Generate jawaban menggunakan Gemini Flash API."""
+    if not settings.GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY belum dikonfigurasi di file .env")
 
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    model = genai.GenerativeModel(settings.GEMINI_MODEL)
     prompt = build_prompt(question_text, context_chunks)
-
-    message = client.messages.create(
-        model='claude-sonnet-4-6',
-        max_tokens=1024,
-        messages=[{'role': 'user', 'content': prompt}],
-    )
-
-    return message.content[0].text
+    response = model.generate_content(prompt)
+    return response.text
 
 
 def ask_question(question_text: str) -> dict:
