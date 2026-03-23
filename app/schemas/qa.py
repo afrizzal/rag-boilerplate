@@ -27,6 +27,10 @@ class AskResponse(BaseModel):
     answer: str
     confidence_score: float
     sources: list[SourceChunk]
+    # Text-to-SQL fields (None jika tidak ada query yang dijalankan)
+    sql_query: str | None = None
+    query_result_count: int = 0
+    data_error: str | None = None
 
 
 class AnswerHistory(BaseModel):

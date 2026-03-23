@@ -2,16 +2,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.database import engine, Base
 import app.models  # noqa: F401 — pastikan semua model ter-register sebelum create_all
-from app.routers import documents, qa
+from app.routers import documents, qa, auth, instructions
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Buat semua tabel di MySQL saat server start (jika belum ada)
     Base.metadata.create_all(bind=engine)
     print("[DB] Tabel siap.")
     yield
-    # Cleanup saat server stop (opsional)
 
 
 app = FastAPI(
@@ -21,8 +19,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(auth.router)
 app.include_router(documents.router)
 app.include_router(qa.router)
+app.include_router(instructions.router)
 
 
 @app.get('/')
@@ -31,6 +31,7 @@ def root():
         'message': 'RAG Chatbot API aktif',
         'docs': '/docs',
         'endpoints': {
+            'login': 'POST /api/auth/token',
             'upload_dokumen': 'POST /api/documents/upload',
             'list_dokumen': 'GET /api/documents',
             'tanya': 'POST /api/qa/ask',

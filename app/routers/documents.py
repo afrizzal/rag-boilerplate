@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.document import Document
+from app.models.user import User
 from app.schemas.document import DocumentResponse, UploadResponse
 from app.services.document_processor import process_document
 
@@ -25,7 +27,10 @@ def _to_response(doc: Document) -> DocumentResponse:
 
 
 @router.get('/', response_model=list[DocumentResponse])
-def list_documents(db: Session = Depends(get_db)):
+def list_documents(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
     """Daftar semua dokumen."""
     docs = db.query(Document).order_by(Document.uploaded_at.desc()).all()
     return [_to_response(d) for d in docs]
@@ -36,6 +41,7 @@ def upload_document(
     file: UploadFile = File(...),
     title: str = Form(default=''),
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
 ):
     """Upload dan proses dokumen baru (PDF / DOCX / TXT)."""
     ext = file.filename.split('.')[-1].lower() if file.filename else ''
@@ -51,7 +57,7 @@ def upload_document(
         file_size=len(file_bytes),
     )
     db.add(document)
-    db.flush()  # dapatkan id sebelum process
+    db.flush()
 
     try:
         process_document(document, file_bytes, db)
@@ -69,7 +75,11 @@ def upload_document(
 
 
 @router.get('/{doc_id}', response_model=DocumentResponse)
-def get_document(doc_id: str, db: Session = Depends(get_db)):
+def get_document(
+    doc_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
     """Detail satu dokumen."""
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
@@ -78,7 +88,11 @@ def get_document(doc_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete('/{doc_id}')
-def delete_document(doc_id: str, db: Session = Depends(get_db)):
+def delete_document(
+    doc_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
     """Hapus dokumen beserta semua chunk-nya."""
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:

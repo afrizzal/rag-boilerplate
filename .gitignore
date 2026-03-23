@@ -1,11 +1,33 @@
+# Environment — NEVER commit this
 .env
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
-db.sqlite3
-media/
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Build
 *.egg-info/
 dist/
 build/
-.venv/
-venv/
+
+# Database
+db.sqlite3
+
+# Media uploads
+media/
+
+# Sentence Transformers model cache
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
